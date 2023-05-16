@@ -1,5 +1,5 @@
 {
-	"name": "@mfe/Header",
+	"name": "@mfe/Dashboard",
 	"scripts": {
 		"predeploy": "npm run build",
 		"deploy": "gh-pages -d dist",

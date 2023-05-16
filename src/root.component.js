@@ -1,58 +1,77 @@
+import React, { useEffect, useState } from "react"
+import "./index.css"
 import { useGlobalStore } from "@mfe/utils"
 import { useStore } from "zustand"
 
-// const Root = (props) => {
-// 	const theme = useGlobalStore.subscribe("theme")
-// 	console.log("store", theme.theme)
-// 	// console.log("store", useGlobalStore.getState().theme)
-// 	return <section>{props.name} is mounted!123</section>
-// }
-
-import React, { useState } from "react"
-import "./index.css"
-
-const getIconUrl = (theme) =>
-	theme === "light"
-		? "https://img.icons8.com/ios-filled/50/null/moon-symbol.png"
-		: "https://img.icons8.com/material-outlined/48/null/sun--v3.png"
-const getTogglerLabel = (theme) => (theme === "light" ? "Dark" : "Light")
-
-function Header() {
+const CityCard = ({ cityName }) => {
 	const useBoundStore = (selector) => useStore(useGlobalStore, selector)
-	const theme = useBoundStore((state) => state.theme)
-	const toggleTheme = useBoundStore((state) => state.toggleTheme)
-	const addCity = useBoundStore((state) => state.addCity)
-	const [city, setCity] = useState("")
-	// const { toggleTheme, theme, addCity } = useGlobalStore.getState()
-	const handleAddCity = () => {
-		addCity(city)
-		setCity("")
-	}
+	const { theme, selectedCity, setSelectedCity, removeCity, fetchWeatherData } =
+		useBoundStore((state) => state)
+	const [city, setCity] = useState(null)
+
+	useEffect(() => {
+		fetchWeatherData(cityName).then(setCity)
+	}, [cityName, fetchWeatherData])
+
+	if (city && city.error) return null
+
 	return (
-		<div className={`header_container header_container_${theme} `}>
-			<div>
-				<input
-					className={`city_input city_input_${theme}`}
-					placeholder="City"
-					value={city}
-					onChange={(event) => setCity(event.target.value)}
-				/>
-				<button className="default_button" onClick={handleAddCity}>
-					Add City
-				</button>
-			</div>
-			<div>
-				<button className="default_button toggle_btn" onClick={toggleTheme}>
-					<img
-						className="toggle_btn_icon"
-						src={getIconUrl(theme)}
-						alt="moon icon"
-					/>
-					{getTogglerLabel(theme)} theme
-				</button>
+		<div
+			onClick={() => {
+				setSelectedCity(selectedCity === cityName ? "" : cityName)
+			}}
+			className={`dashboard_card card_${theme} ${
+				selectedCity === cityName ? "card_selected" : ""
+			}`}
+		>
+			{!city && <div>Loading data</div>}
+			{city && (
+				<>
+					<button
+						className="close_icon"
+						onClick={(e) => {
+							e.stopPropagation()
+							removeCity(cityName)
+						}}
+					>
+						X
+					</button>
+					<div className="city_label">{city.location.name}</div>
+					<div className="country_label">{city.location.country}</div>
+					<div className="weather_details">
+						<img
+							src={city.current.condition.icon}
+							className="weather_img"
+							alt="weather_logo"
+						/>
+						<div>
+							<div className="temperature_label">{city.current.temp_c}°C</div>
+							<div className="weather_condition_text_label">
+								{city.current.condition.text}
+							</div>
+						</div>
+					</div>
+				</>
+			)}
+		</div>
+	)
+}
+
+const Dashboard = () => {
+	const useBoundStore = (selector) => useStore(useGlobalStore, selector)
+	const { theme, cities } = useBoundStore((state) => state)
+	// const { theme, cities } = useAppContext()
+
+	return (
+		<div className={`weather_container container_${theme}`}>
+			<h2 className={`title_${theme}`}>Weather dashboard</h2>
+			<div className="cards_container">
+				{cities.map((cityName, index) => (
+					<CityCard cityName={cityName} key={`city_${cityName}_${index}`} />
+				))}
 			</div>
 		</div>
 	)
 }
 
-export default Header
+export default Dashboard
